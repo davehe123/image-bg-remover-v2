@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Background Remover</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 { text-align: center; margin-bottom: 30px; color: #333; }
+    .upload-area {
+      border: 3px dashed #ddd;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+    .upload-area:hover { border-color: #667eea; background: #f8f9ff; }
+    .upload-area.dragover { border-color: #667eea; background: #f0f3ff; }
+    .upload-icon { font-size: 48px; margin-bottom: 10px; }
+    .upload-text { color: #666; }
+    input[type="file"] { display: none; }
+    .btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .preview { margin-top: 20px; text-align: center; }
+    .preview img { max-width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .loading { display: none; text-align: center; margin: 20px 0; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .error { color: #e74c3c; text-align: center; margin-top: 15px; }
+    .tips { text-align: center; color: #999; font-size: 14px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🖼️ Image Background Remover</h1>
+    
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-icon">📁</div>
+      <div class="upload-text">Click or drag image here</div>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+    
+    <button class="btn" id="processBtn" disabled>Remove Background</button>
+    
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div>Processing...</div>
+    </div>
+    
+    <div class="preview" id="preview"></div>
+    <div class="error" id="error"></div>
+    
+    <div class="tips">Supported: JPG, PNG, WEBP (max 10MB)</div>
+  </div>
+
+  <script>
+    // 修改这里为你的 Cloudflare Worker URL
+    const API_URL = 'https://your-worker.your-account.workers.dev';
+
+    const fileInput = document.getElementById('fileInput');
+    const uploadArea = document.getElementById('uploadArea');
+    const processBtn = document.getElementById('processBtn');
+    const preview = document.getElementById('preview');
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+
+    let selectedFile = null;
+
+    // Upload area click
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    function handleFile(file) {
+      if (file.size > 10 * 1024 * 1024) {
+        error.textContent = 'File too large (max 10MB)';
+        return;
+      }
+      selectedFile = file;
+      preview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="Preview">`;
+      processBtn.disabled = false;
+      error.textContent = '';
+    }
+
+    // Process button
+    processBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+      
+      loading.style.display = 'block';
+      processBtn.disabled = true;
+      error.textContent = '';
+
+      try {
+        const formData = new FormData();
+        formData.append('image_file', selectedFile);
+
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Processing failed');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        
+        preview.innerHTML = `
+          <img src="${url}" alt="Result">
+          <br><br>
+          <a href="${url}" download="removed-bg.png">
+            <button class="btn" style="width:auto;padding:12px 30px;">Download</button>
+          </a>
+        `;
+      } catch (err) {
+        error.textContent = err.message;
+      } finally {
+        loading.style.display = 'none';
+        processBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
