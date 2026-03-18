@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No image file provided" }, { status: 400 });
     }
 
-    const apiKey = process.env.REMOVE_BG_API_KEY;
+    const apiKey = process.env.REMOVE_BG_API_KEY || "wUNUDANZR8CramNjJj1Eo1w3";
     if (!apiKey) {
       return NextResponse.json({ error: "Remove.bg API key not configured" }, { status: 500 });
     }
