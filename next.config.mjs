@@ -1,4 +1,10 @@
-/** @type {import 'next'.NextConfig} */
-var nextConfig = {};
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: "standalone",
+  images: {
+    unoptimized: true
+  }
+};
 
-export default nextConfig;
+const withCloudflare = require("@opennextjs/cloudflare");
+module.exports = withCloudflare(nextConfig);
