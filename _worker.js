@@ -1,24 +1,36 @@
 export default {
   async fetch(request) {
-    const url = new URL(request.url);
-    
-    if (url.pathname === "/api/remove-bg" && request.method === "POST") {
-      return handleRemoveBg(request);
-    }
-    
-    if (url.pathname.startsWith("/api") && request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type"
+    try {
+      const url = new URL(request.url);
+      
+      // API endpoint
+      if (url.pathname === "/api/remove-bg") {
+        if (request.method === "POST") {
+          return handleRemoveBg(request);
         }
-      });
+        if (request.method === "OPTIONS") {
+          return handleOptions();
+        }
+        return new Response("Method not allowed", { status: 405 });
+      }
+      
+      // Everything else - serve static files
+      return null;
+    } catch (e) {
+      return new Response("Error: " + e.message, { status: 500 });
     }
-    
-    return null;
   }
 };
+
+function handleOptions() {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    }
+  });
+}
 
 const API_KEY = "wUNUDANZR8CramNjJj1Eo1w3";
 
