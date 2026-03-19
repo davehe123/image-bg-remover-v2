@@ -1,9 +1,6 @@
 // Cloudflare Worker - Image Background Remover
-// 部署: wrangler deploy
-
 export default {
   async fetch(request, env) {
-    // CORS headers
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -15,10 +12,7 @@ export default {
     }
 
     if (request.method !== 'POST') {
-      return new Response('Method not allowed', { 
-        status: 405, 
-        headers: corsHeaders 
-      });
+      return new Response('Method not allowed', { status: 405, headers: corsHeaders });
     }
 
     try {
@@ -32,16 +26,14 @@ export default {
         });
       }
 
-      // Prepare form data for Remove.bg
       const removeBgFormData = new FormData();
       removeBgFormData.append('image_file', imageFile);
       removeBgFormData.append('size', 'auto');
 
-      // Call Remove.bg API
       const response = await fetch('https://api.remove.bg/v1.0/removebg', {
         method: 'POST',
         headers: {
-          'X-Api-Key': env.REMOVE_BG_API_KEY,
+          'X-Api-Key': 'wUNUDANZR8CramNjJj1Eo1w3',
         },
         body: removeBgFormData
       });
@@ -54,7 +46,6 @@ export default {
         });
       }
 
-      // Return the processed image
       const blob = await response.blob();
       
       return new Response(blob, {
