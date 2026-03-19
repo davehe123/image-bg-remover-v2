@@ -92,8 +92,7 @@
   </div>
 
   <script>
-    // 修改这里为你的 Cloudflare Worker URL
-    const API_URL = 'https://your-worker.your-account.workers.dev';
+    const API_URL = '/api/remove-bg';
 
     const fileInput = document.getElementById('fileInput');
     const uploadArea = document.getElementById('uploadArea');
@@ -104,10 +103,8 @@
 
     let selectedFile = null;
 
-    // Upload area click
     uploadArea.addEventListener('click', () => fileInput.click());
 
-    // Drag and drop
     uploadArea.addEventListener('dragover', (e) => {
       e.preventDefault();
       uploadArea.classList.add('dragover');
@@ -119,7 +116,6 @@
       if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
 
-    // File input change
     fileInput.addEventListener('change', (e) => {
       if (e.target.files.length) handleFile(e.target.files[0]);
     });
@@ -135,7 +131,6 @@
       error.textContent = '';
     }
 
-    // Process button
     processBtn.addEventListener('click', async () => {
       if (!selectedFile) return;
       
