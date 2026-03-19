@@ -2,35 +2,37 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     
-    if (url.pathname === "/api/remove-bg" && request.method === "POST") {
-      return handleRemoveBg(request);
+    // Handle API routes
+    if (url.pathname === "/api/remove-bg") {
+      if (request.method === "POST") {
+        return handleRemoveBg(request);
+      }
+      if (request.method === "OPTIONS") {
+        return handleOptions();
+      }
+      return new Response("Method not allowed", { status: 405 });
     }
     
-    if (url.pathname.startsWith("/api") && request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        }
-      });
-    }
-    
-    if (url.pathname.startsWith("/api")) {
-      return new Response("Not Found", { status: 404 });
-    }
-    
+    // Return null for static files
     return null;
   }
 };
 
-const API_KEY = "wUNUDANZR8CramNjJj1Eo1w3";
+function handleOptions() {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    }
+  });
+}
 
 async function handleRemoveBg(request) {
-  const corsHeaders = {
+  const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type"
   };
 
   try {
@@ -40,44 +42,38 @@ async function handleRemoveBg(request) {
     if (!imageFile) {
       return new Response(JSON.stringify({ error: "No image file provided" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", ...headers }
       });
     }
 
-    const removeBgFormData = new FormData();
-    removeBgFormData.append("image_file", imageFile);
-    removeBgFormData.append("size", "auto");
+    // Call remove.bg API
+    const apiFormData = new FormData();
+    apiFormData.append("image_file", imageFile);
+    apiFormData.append("size", "auto");
 
     const response = await fetch("https://api.remove.bg/v1.0/removebg", {
       method: "POST",
-      headers: {
-        "X-Api-Key": API_KEY,
-      },
-      body: removeBgFormData
+      headers: { "X-Api-Key": "wUNUDANZR8CramNjJj1Eo1w3" },
+      body: apiFormData
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      return new Response(JSON.stringify({ error: "Remove.bg API error", details: error }), {
+      const errorText = await response.text();
+      return new Response(JSON.stringify({ error: "API error", details: errorText }), {
         status: response.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", ...headers }
       });
     }
 
     const blob = await response.blob();
-    
     return new Response(blob, {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "image/png",
-        "Content-Disposition": "attachment; filename=removed-bg.png",
-      },
+      headers: { "Content-Type": "image/png", "Content-Disposition": "attachment", ...headers }
     });
 
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json", ...headers }
     });
   }
 }
