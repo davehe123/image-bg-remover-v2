@@ -1,30 +1,28 @@
-addEventListener("fetch", event => {
-  event.respondWith(handleRequest(event.request));
-});
-
-async function handleRequest(request) {
-  const url = new URL(request.url);
-  
-  if (url.pathname === "/api/remove-bg" && request.method === "POST") {
-    return handleRemoveBg(request);
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    
+    if (url.pathname === "/api/remove-bg" && request.method === "POST") {
+      return handleRemoveBg(request);
+    }
+    
+    if (url.pathname.startsWith("/api") && request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        }
+      });
+    }
+    
+    if (url.pathname.startsWith("/api")) {
+      return new Response("Not Found", { status: 404 });
+    }
+    
+    return null;
   }
-  
-  if (url.pathname.startsWith("/api") && request.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      }
-    });
-  }
-  
-  if (url.pathname.startsWith("/api")) {
-    return new Response("Not Found", { status: 404 });
-  }
-  
-  return fetch(request);
-}
+};
 
 const API_KEY = "wUNUDANZR8CramNjJj1Eo1w3";
 
