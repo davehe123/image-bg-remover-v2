@@ -1,24 +1,20 @@
 export default {
   async fetch(request) {
-    try {
-      const url = new URL(request.url);
-      
-      // API endpoint
-      if (url.pathname === "/api/remove-bg") {
-        if (request.method === "POST") {
-          return handleRemoveBg(request);
-        }
-        if (request.method === "OPTIONS") {
-          return handleOptions();
-        }
-        return new Response("Method not allowed", { status: 405 });
+    const url = new URL(request.url);
+    
+    // API endpoint
+    if (url.pathname === "/api/remove-bg") {
+      if (request.method === "POST") {
+        return handleRemoveBg(request);
       }
-      
-      // Everything else - serve static files
-      return null;
-    } catch (e) {
-      return new Response("Error: " + e.message, { status: 500 });
+      if (request.method === "OPTIONS") {
+        return handleOptions();
+      }
+      return new Response("Method not allowed", { status: 405 });
     }
+    
+    // Static files - use origin fetch
+    return fetch(request);
   }
 };
 
